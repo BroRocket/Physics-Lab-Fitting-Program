@@ -1,0 +1,221 @@
+#Physics Lab lines of best fit
+
+
+filename="FrankHertzData.txt"
+filename2 = "ddata.txt"
+
+import scipy.optimize as optimize
+import numpy as np
+import matplotlib.pyplot as plt
+from pylab import loadtxt
+
+
+def damped_sinusoid(t, a, tau, T, phi):
+
+    return a*np.exp(-t/tau)*np.cos(2*np.pi*t/T+phi)
+
+def exponential(t, a, tau):
+
+    return a*np.exp(-t/tau)
+
+def linear(t, m, b):
+
+    return m*t+b
+
+
+def quadratic(t, a, b, c):
+
+    return a*t**2 + b*t + c
+
+
+def powerlaw(t, a, b):
+
+    return a*t**b
+
+def root(t, a, b, c):
+    return np.sqrt(a*(c*t + b))
+
+def sin_x(t, b, a):
+
+    return b* (     (np.sin(a*(  t/np.sqrt(0.648**2+t**2)  )) ) / (   (a*(t/np.sqrt(0.648**2+t**2)) )     ))**2
+
+def sin_x2(t, a, b):
+    return b* (     (np.sin(a*(  t/np.sqrt(0.648**2+t**2)  )) ) / (   (a*(t/np.sqrt(0.648**2+t**2)) )     ))**2
+
+def polynomial(x, a, b, c, d):
+    return a + b*x + c*x**2 + d*x**3 
+
+
+def main():
+
+    my_func = quadratic
+
+    plt.rcParams.update({'font.size': 14})
+
+    plt.rcParams['figure.figsize'] = 10, 9
+
+
+    data=loadtxt(filename, usecols=(0,1), skiprows=0, unpack=True)
+    data2 = loadtxt(filename2, usecols=(0,1), skiprows=0, unpack=True)
+
+    xdata1 = data[0]
+    xdata2 = data2[0]
+
+    ydata1 = data[1]
+    ydata2 = data2[1]
+
+    xerror = [0]*8
+
+    yerror = [0.0005]*8
+
+    xerror2 = [0]*7
+
+    yerror2 = [0.0005]*7
+
+########### HERE!!! ##############
+
+    init_guess = (5, 1, 1)
+
+    popt, pcov = optimize.curve_fit(my_func, xdata1, ydata1, sigma=yerror, p0=init_guess)
+    popt2, pcov2 = optimize.curve_fit(my_func, xdata2, ydata2, sigma=yerror2, p0=init_guess)
+
+########### HERE!!! ##############
+
+    a=popt[0]
+
+    b=popt[1]
+
+    e = popt[2]
+
+    c=popt2[0]
+
+    d=popt2[1]
+
+    f=popt2[2]
+
+
+    u_a=pcov[0,0]**(0.5)
+
+    u_b=pcov[1,1]**(0.5)
+
+    u_e=pcov[2,2]**(0.5)
+
+    u_c=pcov2[0,0]**(0.5)
+
+    u_d=pcov2[1,1]**(0.5)
+
+    u_f=pcov2[2,2]**(0.5)
+
+
+    start = min(xdata1)
+
+    stop = max(xdata1)
+
+    xs1 = np.arange(start,stop,(stop-start)/1000)
+
+    curve1 = my_func(xs1, *popt)
+
+    start = min(xdata2)
+
+    stop = max(xdata2)
+
+    xs2 = np.arange(start,stop,(stop-start)/1000)
+
+    curve2 = my_func(xs2, *popt2)
+
+    print("a:", a, "+/-", u_a)
+
+    print("b:", b, "+/-", u_b)
+
+    print("e", e, "+/-", u_e)
+
+    print("c:", c, "+/-", u_c)
+
+    print("d:", d, "+/-", u_d)
+
+    print("f", f, "+/-", u_f)
+
+    fig, (ax1,ax2) = plt.subplots(2, 1, gridspec_kw={'height_ratios': [1, 1]})
+    #plt.errorbar(xdata, ydata, yerr=yerror, xerr=xerror, fmt=".", label="Data", color="black")
+    #plt.plot(xs, curve, label="Best Fit", color="blue")
+    #plt.legend(loc='upper right')
+    #plt.xlabel("Number of Exhited Mercury Atoms")
+    #plt.ylabel("Accelerating Voltage (V)")
+    #plt.title("Accelerating Voltage Vs. Number of Exhited Mercury Atoms ")
+    #plt.show()
+
+    ax1.errorbar(xdata1, ydata1, yerr=yerror, xerr=xerror, fmt=".", label="Data", color="black")
+
+
+    ax1.plot(xs1, curve1, label="Best Fit", color="blue")
+
+
+    ax1.set_xlabel("Number of Exhited Mercury Atoms")
+
+    ax1.set_ylabel("Accelerating Voltage (V)")
+
+    ax1.set_title("Accelerating Voltage Maximums Vs. Number of Exhited Mercury Atoms")
+
+
+########### HERE!!! ##############
+
+    ax2.errorbar(xdata2, ydata2, yerr=yerror2, xerr=xerror2, fmt=".", color="black")
+
+    ax2.plot(xs2, curve2, label="Best Fit", color="red")
+
+
+    ax2.set_xlabel("Number of Exhited Mercury Atoms")
+
+    ax2.set_ylabel("Accelerating Voltage (V)")
+
+    ax2.set_title("Accelerating Voltage Minimums Vs. Number of Exhited Mercury Atoms")
+
+
+    fig.tight_layout()
+
+
+    fig.savefig("ComputedBestFits.png")
+
+
+    return None
+
+   
+
+def simulated_patern():
+
+    data=loadtxt(filename, usecols=(0,1), skiprows=2, unpack=True)
+
+
+
+    xdata = data[0]
+
+    for i in range(len(xdata)):
+        xdata[i] = xdata[i] + 0.0633
+
+    ydata = data[1]
+
+    a = (0.000072872*np.pi)/0.00000065
+    print(a)
+    b = 1.7
+    simulated_y = []
+
+    start = min(xdata)
+
+    stop = max(xdata)
+
+    xs = np.arange(start,stop,(stop-start)/1000)
+
+    for x in xs:
+        simulated_y.append(sin_x2(x, a, b))
+    
+    plt.scatter(xdata, ydata, label="Data", color="gray")
+    plt.plot(xs, simulated_y, label="Best Fit", color="blue")
+    plt.legend(loc='upper right')
+    plt.xlabel("Sensor Position Adjusted to Origin (meters)")
+    plt.ylabel("Light Intensity (Volts)")
+    plt.title("Double Slit d=0.25mm a=0.08mm")
+    plt.show()
+
+#simulated_patern()
+main()
+# Run the program.
